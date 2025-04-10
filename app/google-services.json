@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1007776643543",
+    "project_id": "dailychoresapp-20a49",
+    "storage_bucket": "dailychoresapp-20a49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007776643543:android:929ab430591f7dde31b392",
+        "android_client_info": {
+          "package_name": "com.example.dailychoresapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKX-OvyRd53Wo9B6ImFFz1QmAMl2Gk99E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
