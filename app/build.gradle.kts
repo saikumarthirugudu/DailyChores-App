@@ -74,4 +74,13 @@ dependencies {
 
     implementation(libs.firebase.auth.ktx) // Firebase Authentication
     implementation(libs.firebase.firestore.ktx.v24100) // Firestore
+
+    // Retrofit & Gson
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+
+    implementation (libs.androidx.material)
+
+    implementation (libs.androidx.material.icons.extended)
+
 }

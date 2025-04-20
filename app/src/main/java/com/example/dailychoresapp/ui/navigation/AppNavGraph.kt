@@ -13,6 +13,8 @@ sealed class Screen(val route: String) {
     data object Login : Screen("login_screen")
     data object ForgotPassword : Screen("forgot_password_screen")
     data object Home : Screen("home_screen")
+    data object Completed : Screen("completed_screen")
+    data object Stats : Screen("stats_screen")
     data object AddTask : Screen("add_task_screen")
     data object EditTask : Screen("edit_task_screen/{taskId}") {
         fun passTaskId(taskId: Int) = "edit_task_screen/$taskId"
@@ -25,6 +27,7 @@ fun AppNavGraph(navController: NavHostController) {
     val firestore = FirebaseFirestore.getInstance()
 
     NavHost(navController, startDestination = Screen.Login.route) {
+
         composable(Screen.SignUp.route) {
             SignUpScreen(
                 onSignUp = { email, password ->
@@ -83,8 +86,28 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Home.route) { HomeScreen(navController) }
-        composable(Screen.AddTask.route) { AddTaskScreen(navController) }
+        // ✅ Bottom Navigation Screens wrapped in MainScreen
+        composable(Screen.Home.route) {
+            MainScreen(navController = navController) {
+                HomeScreen(navController)
+            }
+        }
+
+        composable(Screen.Completed.route) {
+            MainScreen(navController = navController) {
+                CompletedScreen(navController)
+            }
+        }
+
+        composable(Screen.Stats.route) {
+            MainScreen(navController = navController) {
+                StatsScreen(navController)
+            }
+        }
+
+        composable(Screen.AddTask.route) {
+            AddTaskScreen(navController)
+        }
 
         composable(
             route = Screen.EditTask.route,

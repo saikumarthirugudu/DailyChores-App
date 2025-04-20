@@ -1,11 +1,14 @@
 package com.example.dailychoresapp.data.database
 
 import android.content.Context
-import androidx.room.*
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import com.example.dailychoresapp.data.model.Task
 
-@Database(entities = [Task::class], version = 3, exportSchema = false)
+@Database(entities = [Task::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun taskDao(): TaskDao
 
     companion object {
@@ -17,10 +20,8 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "tasks_database"
-                )
-                    .fallbackToDestructiveMigration()  // Clears DB if migration fails
-                    .build()
+                    "task_database"
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

@@ -2,6 +2,7 @@ package com.example.dailychoresapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 class AuthViewModel : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -20,5 +21,9 @@ class AuthViewModel : ViewModel() {
 
     fun forgotPassword(email: String) {
         auth.sendPasswordResetEmail(email)
+    }
+
+    fun getCurrentUser(): FirebaseUser? {
+        return auth.currentUser
     }
 }

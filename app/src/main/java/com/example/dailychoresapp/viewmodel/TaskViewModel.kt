@@ -1,37 +1,59 @@
 package com.example.dailychoresapp.viewmodel
 
-import android.app.Application
 import androidx.lifecycle.*
-import com.example.dailychoresapp.data.database.AppDatabase
 import com.example.dailychoresapp.data.model.Task
+import com.example.dailychoresapp.repository.TaskRepository
 import kotlinx.coroutines.launch
 
-class TaskViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = AppDatabase.getDatabase(application)
-    private val taskDao = database.taskDao()
+class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
 
-    val allTasks: LiveData<List<Task>> = taskDao.getAllTasks()
+    val allTasks: LiveData<List<Task>> = repository.allTasks
+    val incompleteTasks: LiveData<List<Task>> = repository.incompleteTasks
+    val completedTasks: LiveData<List<Task>> = repository.completedTasks
+    val completedCount: LiveData<Int> = repository.completedCount
+    val totalTaskCount: LiveData<Int> = repository.totalTaskCount
 
-    // ✅ Fetch task by ID
-    fun getTaskById(taskId: Int): LiveData<Task?> {
-        return taskDao.getTaskById(taskId)
+    private val _searchResults = MutableLiveData<List<Task>>()
+    val searchResults: LiveData<List<Task>> get() = _searchResults
+
+    private fun insertTask(task: Task) = viewModelScope.launch {
+        repository.insertTask(task)
     }
 
-    fun insert(task: Task) {
-        viewModelScope.launch {
-            taskDao.insertTask(task)
+    fun insert(task: Task) = insertTask(task) // Alias for UI calls
+
+    fun updateTask(task: Task) = viewModelScope.launch {
+        repository.updateTask(task)
+    }
+
+    fun deleteTask(task: Task) = viewModelScope.launch {
+        repository.deleteTask(task)
+    }
+
+    fun deleteAllCompletedTasks() = viewModelScope.launch {
+        repository.deleteAllCompletedTasks()
+    }
+
+    fun searchTasks(query: String) {
+        repository.searchTasks(query).observeForever {
+            _searchResults.postValue(it)
         }
     }
 
-    fun deleteTask(task: Task) {
-        viewModelScope.launch {
-            taskDao.deleteTask(task)
-        }
+    fun getTasksByCategory(category: String): LiveData<List<Task>> {
+        return repository.getTasksByCategory(category)
     }
 
-    fun updateTask(task: Task) {
-        viewModelScope.launch {
-            taskDao.updateTask(task)
+    fun getTaskById(taskId: Int): LiveData<Task> {
+        return repository.getTaskById(taskId)
+    }
+}
+
+class TaskViewModelFactory(private val repository: TaskRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
+            return TaskViewModel(repository) as T
         }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
