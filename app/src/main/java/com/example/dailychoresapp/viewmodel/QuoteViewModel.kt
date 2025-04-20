@@ -23,17 +23,13 @@ class QuoteViewModel(private val repository: QuoteRepository) : ViewModel() {
         fetchDailyQuote()
     }
 
-    private fun fetchDailyQuote() {
+    fun fetchDailyQuote() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val response = repository.getDailyQuote()
-                if (response.isSuccessful && response.body() != null) {
-                    val quoteResponse = response.body()!!
-                    _quote.value = Quote(
-                        content = quoteResponse.content,
-                        author = quoteResponse.author ?: "Unknown"
-                    )
+                if (response.isSuccessful && !response.body().isNullOrEmpty()) {
+                    _quote.value = response.body()!![0]
                     _errorMessage.value = null
                 } else {
                     _errorMessage.value = "Failed to load quote"

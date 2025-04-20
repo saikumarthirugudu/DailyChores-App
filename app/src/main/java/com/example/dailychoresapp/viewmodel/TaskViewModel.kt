@@ -1,11 +1,15 @@
 package com.example.dailychoresapp.viewmodel
 
+import android.app.Application
 import androidx.lifecycle.*
 import com.example.dailychoresapp.data.model.Task
 import com.example.dailychoresapp.repository.TaskRepository
+import com.example.dailychoresapp.util.ReminderScheduler
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
-class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
+class TaskViewModel(application: Application, private val repository: TaskRepository) : AndroidViewModel(application) {
 
     val allTasks: LiveData<List<Task>> = repository.allTasks
     val incompleteTasks: LiveData<List<Task>> = repository.incompleteTasks
@@ -16,22 +20,30 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
     private val _searchResults = MutableLiveData<List<Task>>()
     val searchResults: LiveData<List<Task>> get() = _searchResults
 
-    private fun insertTask(task: Task) = viewModelScope.launch {
+    fun insert(task: Task) = viewModelScope.launch {
         repository.insertTask(task)
+        val dueDateMillis = parseDateToMillis(task.dueDate)
+        ReminderScheduler.scheduleReminder(getApplication(), task.id, task.title, dueDateMillis)
     }
-
-    fun insert(task: Task) = insertTask(task) // Alias for UI calls
 
     fun updateTask(task: Task) = viewModelScope.launch {
         repository.updateTask(task)
+        val dueDateMillis = parseDateToMillis(task.dueDate)
+        if (!task.isCompleted) {
+            ReminderScheduler.scheduleReminder(getApplication(), task.id, task.title, dueDateMillis)
+        } else {
+            ReminderScheduler.cancelReminder(getApplication(), task.id)
+        }
     }
 
     fun deleteTask(task: Task) = viewModelScope.launch {
         repository.deleteTask(task)
+        ReminderScheduler.cancelReminder(getApplication(), task.id)
     }
 
     fun deleteAllCompletedTasks() = viewModelScope.launch {
         repository.deleteAllCompletedTasks()
+        // Optional: Cancel all reminders if needed (not implemented per-task here)
     }
 
     fun searchTasks(query: String) {
@@ -47,12 +59,25 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
     fun getTaskById(taskId: Int): LiveData<Task> {
         return repository.getTaskById(taskId)
     }
+
+    private fun parseDateToMillis(dateString: String): Long {
+        return try {
+            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val date = formatter.parse(dateString)
+            date?.time ?: System.currentTimeMillis()
+        } catch (e: Exception) {
+            System.currentTimeMillis()
+        }
+    }
 }
 
-class TaskViewModelFactory(private val repository: TaskRepository) : ViewModelProvider.Factory {
+class TaskViewModelFactory(
+    private val application: Application,
+    private val repository: TaskRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
-            return TaskViewModel(repository) as T
+            return TaskViewModel(application, repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

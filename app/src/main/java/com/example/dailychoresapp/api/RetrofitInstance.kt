@@ -5,13 +5,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
 
-    private const val BASE_URL = "https://api.quotable.io/"
+    private const val BASE_URL = "https://zenquotes.io/api/"
 
-    val api: DailyQuoteApiService by lazy {
+    val api: ZenQuoteApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(DailyQuoteApiService::class.java)
+            .create(ZenQuoteApiService::class.java)
     }
 }

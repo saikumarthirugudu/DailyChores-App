@@ -5,10 +5,13 @@ import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.dailychoresapp.ui.screens.*
+import com.example.dailychoresapp.viewmodel.QuoteViewModel
+import com.example.dailychoresapp.viewmodel.TaskViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 sealed class Screen(val route: String) {
+    data object Splash : Screen("splash_screen")
     data object SignUp : Screen("signup_screen")
     data object Login : Screen("login_screen")
     data object ForgotPassword : Screen("forgot_password_screen")
@@ -19,14 +22,25 @@ sealed class Screen(val route: String) {
     data object EditTask : Screen("edit_task_screen/{taskId}") {
         fun passTaskId(taskId: Int) = "edit_task_screen/$taskId"
     }
+    data object TaskDetailScreen : Screen("task_detail_screen/{taskId}") {
+        fun passTaskId(taskId: Int) = "task_detail_screen/$taskId"
+    }
 }
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(
+    navController: NavHostController,
+    taskViewModel: TaskViewModel,
+    quoteViewModel: QuoteViewModel
+) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
 
-    NavHost(navController, startDestination = Screen.Login.route) {
+    NavHost(navController, startDestination = Screen.Splash.route) {
+
+        composable(Screen.Splash.route) {
+            SplashScreen(navController)
+        }
 
         composable(Screen.SignUp.route) {
             SignUpScreen(
@@ -86,27 +100,26 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        // ✅ Bottom Navigation Screens wrapped in MainScreen
         composable(Screen.Home.route) {
-            MainScreen(navController = navController) {
-                HomeScreen(navController)
+            MainScreen(navController) {
+                HomeScreen(navController, taskViewModel, quoteViewModel)
             }
         }
 
         composable(Screen.Completed.route) {
-            MainScreen(navController = navController) {
-                CompletedScreen(navController)
+            MainScreen(navController) {
+                CompletedScreen(navController, taskViewModel)
             }
         }
 
         composable(Screen.Stats.route) {
-            MainScreen(navController = navController) {
-                StatsScreen(navController)
+            MainScreen(navController) {
+                StatsScreen(taskViewModel)
             }
         }
 
         composable(Screen.AddTask.route) {
-            AddTaskScreen(navController)
+            AddTaskScreen(navController, taskViewModel)
         }
 
         composable(
@@ -115,7 +128,17 @@ fun AppNavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: -1
             if (taskId != -1) {
-                EditTaskScreen(navController, taskId)
+                EditTaskScreen(navController, taskId, taskViewModel)
+            }
+        }
+
+        composable(
+            route = Screen.TaskDetailScreen.route,
+            arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: -1
+            if (taskId != -1) {
+                TaskDetailScreen(taskId = taskId, navController = navController, taskViewModel = taskViewModel)
             }
         }
     }

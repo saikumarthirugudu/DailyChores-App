@@ -1,166 +1,281 @@
 package com.example.dailychoresapp.ui.screens
 
-import android.app.Application
-import android.util.Log
+import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.widget.DatePicker
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.dailychoresapp.data.model.Task
+import com.example.dailychoresapp.ui.utils.formatDate
 import com.example.dailychoresapp.viewmodel.TaskViewModel
-import com.example.dailychoresapp.viewmodel.TaskViewModelFactory
-import com.example.dailychoresapp.repository.TaskRepository
-import androidx.compose.runtime.livedata.observeAsState
-import com.example.dailychoresapp.data.database.AppDatabase
-import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTaskScreen(
     navController: NavController,
-    taskId: Int
+    taskId: Int,
+    taskViewModel: TaskViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = AppDatabase.getDatabase(application)
-    val repository = TaskRepository(database.taskDao())
+    val task = taskViewModel.getTaskById(taskId).observeAsState(initial = null).value
 
-    val taskViewModel: TaskViewModel = viewModel(
-        factory = TaskViewModelFactory(repository)
-    )
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+    var priority by remember { mutableStateOf("") }
+    var dueDate by remember { mutableStateOf("") }
+    var isCompleted by remember { mutableStateOf(false) }
 
-    val taskToEdit by taskViewModel.getTaskById(taskId).observeAsState()
+    var hasReminder by remember { mutableStateOf(false) }
+    var reminderTime by remember { mutableStateOf("") }
+    var repeatInterval by remember { mutableStateOf("None") }
 
-    if (taskToEdit == null) {
-        Text("Loading...", modifier = Modifier.padding(16.dp))
-        return
+    val categoryOptions = listOf("Home", "Work", "Personal", "Other")
+    val priorityOptions = listOf("Low", "Medium", "High")
+    val repeatOptions = listOf("None", "Daily", "Weekly")
+
+    var expandedCategory by remember { mutableStateOf(false) }
+    var expandedPriority by remember { mutableStateOf(false) }
+    var expandedRepeat by remember { mutableStateOf(false) }
+
+    LaunchedEffect(task) {
+        task?.let {
+            title = it.title
+            description = it.description
+            category = it.category
+            priority = it.priority
+            dueDate = it.dueDate
+            isCompleted = it.isCompleted
+            hasReminder = it.hasReminder
+            reminderTime = it.reminderTime ?: ""
+            repeatInterval = it.repeatInterval ?: "None"
+        }
     }
-
-    var title by remember { mutableStateOf(taskToEdit!!.title) }
-    var description by remember { mutableStateOf(taskToEdit!!.description) }
-    var priority by remember { mutableStateOf(taskToEdit!!.priority) }
-    var category by remember { mutableStateOf(taskToEdit!!.category) }
-
-    val formatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
-    var dueDateInput by remember { mutableStateOf(formatter.format(Date(taskToEdit!!.dueDate))) }
-    var dueDateMillis by remember { mutableLongStateOf(taskToEdit!!.dueDate) }
-
-    var expanded by remember { mutableStateOf(false) }
-    val priorities = listOf("Low", "Medium", "High")
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Edit Task") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (title.isNotBlank() && category.isNotBlank() && priority.isNotBlank()) {
+                        val updatedTask = Task(
+                            id = taskId,
+                            title = title,
+                            description = description,
+                            category = category,
+                            priority = priority,
+                            dueDate = dueDate,
+                            isCompleted = isCompleted,
+                            hasReminder = hasReminder,
+                            reminderTime = if (hasReminder) reminderTime else null,
+                            repeatInterval = if (hasReminder) repeatInterval else null
+                        )
+                        taskViewModel.updateTask(updatedTask)
+                        navController.popBackStack()
+                    } else {
+                        Toast.makeText(context, "Please fill all fields!", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                shape = RoundedCornerShape(50),
+                containerColor = MaterialTheme.colorScheme.secondary
+            ) {
+                Text("✓", color = Color.White)
+            }
         }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(paddingValues)
-                .padding(16.dp)
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Task Title") },
+                label = { Text("Title") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .shadow(2.dp, RoundedCornerShape(8.dp))
             )
 
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Task Description") },
+                label = { Text("Description") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .shadow(2.dp, RoundedCornerShape(8.dp))
             )
 
-            OutlinedTextField(
+            AnimatedDropdownField(
+                label = "Category",
                 value = category,
-                onValueChange = { category = it },
-                label = { Text("Category") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                options = categoryOptions,
+                expanded = expandedCategory,
+                onExpandedChange = { expandedCategory = it },
+                onOptionSelected = { category = it; expandedCategory = false }
             )
 
+            AnimatedDropdownField(
+                label = "Priority",
+                value = priority,
+                options = priorityOptions,
+                expanded = expandedPriority,
+                onExpandedChange = { expandedPriority = it },
+                onOptionSelected = { priority = it; expandedPriority = false }
+            )
+
+            // Due Date Picker
             OutlinedTextField(
-                value = dueDateInput,
-                onValueChange = {
-                    dueDateInput = it
-                    try {
-                        dueDateMillis = formatter.parse(it)?.time ?: dueDateMillis
-                    } catch (e: Exception) {
-                        Log.e("EditTaskScreen", "Date parsing error: ${e.message}")
+                value = dueDate,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Due Date") },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        val calendar = Calendar.getInstance()
+                        val datePicker = DatePickerDialog(
+                            context,
+                            { _: DatePicker, year, month, dayOfMonth ->
+                                dueDate = formatDate(year, month, dayOfMonth)
+                            },
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                        )
+                        datePicker.show()
+                    }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Pick Date")
                     }
                 },
-                label = { Text("Due Date (yyyy-MM-dd)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                modifier = Modifier.fillMaxWidth()
             )
 
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = priority,
-                    onValueChange = {},
-                    label = { Text("Priority") },
-                    readOnly = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    priorities.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                priority = option
-                                expanded = false
+            // Completed toggle
+            SwitchRow(label = "Mark as Completed", checked = isCompleted) { isCompleted = it }
+
+            // Reminder toggle
+            SwitchRow(label = "Enable Reminder", checked = hasReminder) { hasReminder = it }
+
+            AnimatedVisibility(visible = hasReminder, enter = fadeIn(), exit = fadeOut()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Reminder Time Picker
+                    OutlinedTextField(
+                        value = reminderTime,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Reminder Time") },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                val calendar = Calendar.getInstance()
+                                val timePicker = TimePickerDialog(
+                                    context,
+                                    { _, hour, minute ->
+                                        reminderTime = String.format("%02d:%02d", hour, minute)
+                                    },
+                                    calendar.get(Calendar.HOUR_OF_DAY),
+                                    calendar.get(Calendar.MINUTE),
+                                    true
+                                )
+                                timePicker.show()
+                            }) {
+                                Icon(Icons.Default.Schedule, contentDescription = "Pick Time")
                             }
-                        )
-                    }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    AnimatedDropdownField(
+                        label = "Repeat",
+                        value = repeatInterval,
+                        options = repeatOptions,
+                        expanded = expandedRepeat,
+                        onExpandedChange = { expandedRepeat = it },
+                        onOptionSelected = { repeatInterval = it; expandedRepeat = false }
+                    )
                 }
             }
+        }
+    }
+}
 
-            Button(
-                onClick = {
-                    val updatedTask = taskToEdit!!.copy(
-                        title = title,
-                        description = description,
-                        priority = priority,
-                        category = category,
-                        dueDate = dueDateMillis
-                    )
-                    taskViewModel.updateTask(updatedTask)
-                    navController.popBackStack()
-                },
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Text("Update Task")
+@Composable
+fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnimatedDropdownField(
+    label: String,
+    value: String,
+    options: List<String>,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onOptionSelected: (String) -> Unit
+) {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = { onOptionSelected(option) }
+                )
             }
         }
     }

@@ -1,12 +1,7 @@
 package com.example.dailychoresapp.repository
 
-import com.example.dailychoresapp.api.DailyQuoteApiService
-import com.example.dailychoresapp.api.QuoteResponse
-import retrofit2.Response
+import com.example.dailychoresapp.api.ZenQuoteApiService
 
-class QuoteRepository(private val apiService: DailyQuoteApiService) {
-
-    suspend fun getDailyQuote(): Response<QuoteResponse> {
-        return apiService.getDailyQuote()
-    }
+class QuoteRepository(private val api: ZenQuoteApiService) {
+    suspend fun getDailyQuote() = api.getDailyQuote()
 }

@@ -1,6 +1,6 @@
 package com.example.dailychoresapp.data.model
 
 data class Quote(
-    val content: String,
-    val author: String?
+    val q: String, // Quote text
+    val a: String  // Author
 )

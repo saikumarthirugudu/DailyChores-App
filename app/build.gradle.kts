@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.room.runtime.android)
+    implementation(libs.androidx.work.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -82,5 +84,14 @@ dependencies {
     implementation (libs.androidx.material)
 
     implementation (libs.androidx.material.icons.extended)
+
+    // Vico Chart
+    implementation (libs.vico.compose)
+    implementation (libs.core)
+    implementation (libs.views)
+
+    implementation (libs.vico.compose)
+    implementation (libs.core)
+    implementation (libs.compose.m3)
 
 }

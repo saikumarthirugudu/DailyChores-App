@@ -9,9 +9,12 @@ data class Task(
     val id: Int = 0,
     val title: String,
     val description: String,
-    val dueDate: Long, // store as timestamp
-    val priority: String, // Low, Medium, High
+    val dueDate: String,
+    val priority: String,
     val category: String,
     val isCompleted: Boolean = false,
+    val reminderTime: String? = null,
+    val hasReminder: Boolean = false,
+    val repeatInterval: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
